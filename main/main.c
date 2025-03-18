@@ -207,13 +207,22 @@ void setup_audio(void) {
         printf("Failed to alloc audio buffer!\n");
         goto THREAD_END;
     }
+    FILE *f = fopen(SD_MOUNT_POINT"/record.wav", "a");
+    if (f == NULL) {
+        ESP_LOGE(TAG, "Failed to open file for writing");
+        return;
+    }
+    fwrite(&wav_header, sizeof(wav_header), 1, f);
     // 读取音频数据
     while(true) {
         int ret = raw_stream_read(audio_reader, audio_pcm_buf, CONFIG_PCM_DATA_LEN);
         if(ret != CONFIG_PCM_DATA_LEN) {
             printf("Failed to read audio data!\n");
         }
+        fwrite(i2s_read_buffer_global, bytes_read, 1, f);
     }
+    fclose(f);
+
 
 THREAD_END:
     if(audio_pcm_buf) {
