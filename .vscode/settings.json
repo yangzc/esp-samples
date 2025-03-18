@@ -1,0 +1,19 @@
+{
+    "C_Cpp.intelliSenseEngine": "default",
+    "idf.espIdfPath": "/Users/yangzc/esp/v5.4/esp-idf",
+    "idf.pythonInstallPath": "/opt/miniconda3/bin/python",
+    "idf.espAdfPath": "/Users/yangzc/esp/esp-adf",
+    "idf.openOcdConfigs": [
+        "interface/ftdi/esp32_devkitj_v1.cfg",
+        "target/esp32s3.cfg"
+    ],
+    "idf.port": "/dev/tty.wlan-debug",
+    "idf.toolsPath": "/Users/yangzc/.espressif",
+    "files.associations": {
+        "*.java": "java",
+        "nvs_flash.h": "c",
+        "string.h": "c",
+        "semphr.h": "c",
+        "complex": "c"
+    }
+}
