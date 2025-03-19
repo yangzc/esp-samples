@@ -14,7 +14,8 @@
         "nvs_flash.h": "c",
         "string.h": "c",
         "semphr.h": "c",
-        "complex": "c"
+        "complex": "c",
+        "esp_wifi.h": "c"
     },
     "idf.customExtraVars": {
         "IDF_TARGET": "esp32s3"

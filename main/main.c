@@ -1,6 +1,7 @@
 #include <string.h>
+#include <esp_timer.h>
 #include "nvs_flash.h"
-// #include "esp_log.h"
+#include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "stdio.h"
@@ -21,7 +22,7 @@ static EventGroupHandle_t s_event_group;
 const int WIFI_CONNECTED_BIT = BIT0;
 static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data) {
-    ESP_LOGI(TAG, "Event base: %s, event id: %d", event_base, event_id);
+    ESP_LOGI(TAG, "Event base: %s, event id: %d", event_base, (int)event_id);
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
@@ -167,7 +168,8 @@ void setup_sdcard(void) {
     }
 
     // Card has been initialized, print its properties
-    sdmmc_card_print_info(stdout, card);
+    // sdmmc_card_print_info(stdout, card);
+
 }
 
 static audio_pipeline_handle_t recorder;
@@ -184,7 +186,7 @@ void setup_audio(void) {
         ESP_LOGE(TAG, "Failed to create audio recorder");
         return;
     }
-    i2s_stream_cfg_t i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(CODEC_ADC_I2S_PORT, CONFIG_PCM_SAMPLE_RATE, AUDIO_I2S_BITS, AUDIO_STREAM_READER);
+    i2s_stream_cfg_t i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(0, CONFIG_PCM_SAMPLE_RATE, AUDIO_I2S_BITS, AUDIO_STREAM_READER);
     i2s_cfg.task_core     = 0;
     i2s_cfg.stack_in_ext  = true;
     i2s_stream_set_channel_type(&i2s_cfg, I2S_CHANNEL_TYPE_ONLY_LEFT);
