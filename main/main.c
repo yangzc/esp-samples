@@ -1,6 +1,6 @@
 #include <string.h>
 #include "nvs_flash.h"
-#include "esp_log.h"
+// #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "stdio.h"
@@ -170,8 +170,8 @@ void setup_sdcard(void) {
     sdmmc_card_print_info(stdout, card);
 }
 
-static audio_pipeline_handle_t recorder, player;
-static audio_pipeline_handle_t audio_reader;
+static audio_pipeline_handle_t recorder;
+static audio_element_handle_t audio_reader;
 #define I2S_NUM         (I2S_NUM_0)
 #define CONFIG_PCM_SAMPLE_RATE (8000)
 #define CONFIG_PCM_DATA_LEN     320
@@ -207,21 +207,21 @@ void setup_audio(void) {
         printf("Failed to alloc audio buffer!\n");
         goto THREAD_END;
     }
-    FILE *f = fopen(SD_MOUNT_POINT"/record.wav", "a");
-    if (f == NULL) {
-        ESP_LOGE(TAG, "Failed to open file for writing");
-        return;
-    }
-    fwrite(&wav_header, sizeof(wav_header), 1, f);
-    // 读取音频数据
-    while(true) {
-        int ret = raw_stream_read(audio_reader, audio_pcm_buf, CONFIG_PCM_DATA_LEN);
-        if(ret != CONFIG_PCM_DATA_LEN) {
-            printf("Failed to read audio data!\n");
-        }
-        fwrite(i2s_read_buffer_global, bytes_read, 1, f);
-    }
-    fclose(f);
+    // FILE *f = fopen(SD_MOUNT_POINT"/record.wav", "a");
+    // if (f == NULL) {
+    //     ESP_LOGE(TAG, "Failed to open file for writing");
+    //     return;
+    // }
+    // fwrite(&wav_header, sizeof(wav_header), 1, f);
+    // // 读取音频数据
+    // while(true) {
+    //     int ret = raw_stream_read(audio_reader, audio_pcm_buf, CONFIG_PCM_DATA_LEN);
+    //     if(ret != CONFIG_PCM_DATA_LEN) {
+    //         printf("Failed to read audio data!\n");
+    //     }
+    //     fwrite(audio_pcm_buf, ret, 1, f);
+    // }
+    // fclose(f);
 
 
 THREAD_END:

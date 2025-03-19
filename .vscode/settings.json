@@ -1,8 +1,8 @@
 {
     "C_Cpp.intelliSenseEngine": "default",
-    "idf.espIdfPath": "/Users/yangzc/esp/v5.4/esp-idf",
-    "idf.pythonInstallPath": "/opt/miniconda3/bin/python",
+    "idf.espIdfPath": "/Users/yangzc/esp/esp-idf",
     "idf.espAdfPath": "/Users/yangzc/esp/esp-adf",
+    "idf.pythonInstallPath": "/opt/miniconda3/bin/python",
     "idf.openOcdConfigs": [
         "interface/ftdi/esp32_devkitj_v1.cfg",
         "target/esp32s3.cfg"
@@ -15,5 +15,8 @@
         "string.h": "c",
         "semphr.h": "c",
         "complex": "c"
+    },
+    "idf.customExtraVars": {
+        "IDF_TARGET": "esp32s3"
     }
 }
