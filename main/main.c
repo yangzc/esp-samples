@@ -16,7 +16,10 @@
 #include "board.h"
 #include "audio_element.h"
 #include "sdmmc_cmd.h"
+#include "format_wav.h"
 #include "../build/config/sdkconfig.h"
+#include "wav_encoder.h"
+#include "raw_stream.h"
 
 // 网络部分
 static const char *TAG = "wifi station";
@@ -175,47 +178,79 @@ void setup_sdcard(void) {
 }
 
 static audio_pipeline_handle_t recorder;
-static audio_element_handle_t audio_reader;
+// static audio_element_handle_t audio_reader;
 #define I2S_NUM         (I2S_NUM_0)
 #define CONFIG_PCM_SAMPLE_RATE (8000)
 #define CONFIG_PCM_DATA_LEN     320
 #define AUDIO_I2S_BITS   32
+#define BYTE_RATE           (CONFIG_PCM_SAMPLE_RATE * (AUDIO_I2S_BITS / 8)) * 1
 void setup_audio(void) {
-
+    // 初始化音频管道
     audio_pipeline_cfg_t pipeline_cfg = DEFAULT_AUDIO_PIPELINE_CONFIG();
     recorder = audio_pipeline_init(&pipeline_cfg);
     if(!recorder) {
         ESP_LOGE(TAG, "Failed to create audio recorder");
         return;
     }
+
+    // 初始化音频输入
     i2s_stream_cfg_t i2s_cfg = I2S_STREAM_CFG_DEFAULT_WITH_PARA(0, CONFIG_PCM_SAMPLE_RATE, AUDIO_I2S_BITS, AUDIO_STREAM_READER);
     i2s_cfg.task_core     = 0;
     i2s_cfg.stack_in_ext  = true;
     i2s_stream_set_channel_type(&i2s_cfg, I2S_CHANNEL_TYPE_ONLY_LEFT);
     // i2s_cfg.out_rb_size  = 2 * 1024;
     i2s_cfg.stack_in_ext  = true;
-    audio_reader = i2s_stream_init(&i2s_cfg);
+    audio_element_handle_t i2s_audio_reader = i2s_stream_init(&i2s_cfg);
+    audio_pipeline_register(recorder, i2s_audio_reader, "i2s");
 
-    // 读取音频数据
-    audio_pipeline_register(recorder, audio_reader, "i2s");
+    // 初始化WAV编码器
+    wav_encoder_cfg_t wav_encoder_cfg = DEFAULT_WAV_ENCODER_CONFIG();
+    wav_encoder_cfg.task_core = 1;
+    audio_element_handle_t wav_encoder = wav_encoder_init(&wav_encoder_cfg);
+    audio_pipeline_register(recorder, wav_encoder, "encoder");
+
+    // 初始化文件输出
+    // https://github.com/m5stack/uiflow-micropython/blob/04a6d8b968d2df007b3312a41125c1d65dccb29f/m5stack/cmodules/adf_module/audio_recorder.c#L418
+    raw_stream_cfg_t raw_stream_cfg = RAW_STREAM_CFG_DEFAULT();
+    raw_stream_cfg.type = AUDIO_STREAM_WRITER;
+    audio_element_handle_t raw_stream = raw_stream_init(&raw_stream_cfg);
+    audio_element_set_uri(raw_stream, SD_MOUNT_POINT"/record.wav");
+    // 修改输出流的信息
+    audio_element_info_t out_stream_info;
+    audio_element_getinfo(raw_stream, &out_stream_info);
+    out_stream_info.sample_rates = CONFIG_PCM_SAMPLE_RATE;
+    out_stream_info.channels = 1;
+    out_stream_info.bits = AUDIO_I2S_BITS;
+    audio_element_setinfo(raw_stream, &out_stream_info);
+    audio_pipeline_register(recorder, raw_stream, "file");
     // 设置超时
     audio_element_set_output_timeout(audio_reader, portMAX_DELAY);
 
-    const char *link_tag[] = {"i2s"};
-    audio_pipeline_link(recorder, link_tag, 2);
+    const char *link_tag[] = {"i2s", "encoder", "file"};
+    audio_pipeline_link(recorder, link_tag, 3);
     // start the pipeline
     audio_pipeline_run(recorder);
 
-    uint8_t *audio_pcm_buf = heap_caps_malloc(CONFIG_PCM_DATA_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    if (!audio_pcm_buf) {
-        printf("Failed to alloc audio buffer!\n");
-        goto THREAD_END;
+    while(true) {
+        // vTaskDelay(1000 / portTICK_PERIOD_MS);
+        raw_stream_read(audio_reader, NULL, 1024);
     }
+
+
+    // uint8_t *audio_pcm_buf = heap_caps_malloc(CONFIG_PCM_DATA_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    // if (!audio_pcm_buf) {
+    //     printf("Failed to alloc audio buffer!\n");
+    //     goto THREAD_END;
+    // }
     // FILE *f = fopen(SD_MOUNT_POINT"/record.wav", "a");
     // if (f == NULL) {
     //     ESP_LOGE(TAG, "Failed to open file for writing");
     //     return;
     // }
+    // 写入WAV文件头
+    // uint32_t flash_rec_time = BYTE_RATE * 10;
+    // const wav_header_t wav_header =
+    //     WAV_HEADER_PCM_DEFAULT(flash_rec_time, AUDIO_I2S_BITS, CONFIG_PCM_SAMPLE_RATE, 1);
     // fwrite(&wav_header, sizeof(wav_header), 1, f);
     // // 读取音频数据
     // while(true) {
@@ -227,11 +262,10 @@ void setup_audio(void) {
     // }
     // fclose(f);
 
-
-THREAD_END:
-    if(audio_pcm_buf) {
-        free(audio_pcm_buf);
-    }
+// THREAD_END:
+//     if(audio_pcm_buf) {
+//         free(audio_pcm_buf);
+//     }
 }
 
 int app_main(void) {

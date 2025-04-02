@@ -35,7 +35,9 @@
         "soc.h": "c",
         "esp_assert.h": "c",
         "esp_vfs_fat.h": "c",
-        "clk_tree_defs.h": "c"
+        "clk_tree_defs.h": "c",
+        "wav_head.h": "c",
+        "format_wav.h": "c"
     },
     "idf.customExtraVars": {
         "IDF_TARGET": "esp32s3"
