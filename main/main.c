@@ -11,10 +11,12 @@
 #include "audio_thread.h"
 #include "audio_pipeline.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/event_groups.h"
 #include "i2s_stream.h"
 #include "board.h"
 #include "audio_element.h"
-// #include "esp_system.h"
+#include "sdmmc_cmd.h"
+#include "../build/config/sdkconfig.h"
 
 // 网络部分
 static const char *TAG = "wifi station";
@@ -98,7 +100,7 @@ void setup_wifi(const char *ssid, const char *password) {
 */
 void setup_sntp(void) {
     printf("Initializing SNTP\n");
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
     // 设置SNTP服务器
     esp_sntp_setservername(0, "pool.ntp.org");
     // 初始化SNTP
@@ -168,7 +170,7 @@ void setup_sdcard(void) {
     }
 
     // Card has been initialized, print its properties
-    // sdmmc_card_print_info(stdout, card);
+    sdmmc_card_print_info(stdout, card);
 
 }
 

@@ -2,7 +2,7 @@
     "C_Cpp.intelliSenseEngine": "default",
     "idf.espIdfPath": "/Users/yangzc/devsoft/MDK/esp/esp-idf",
     "idf.espAdfPath": "/Users/yangzc/devsoft/MDK/esp/esp-adf",
-    "idf.pythonInstallPath": "/Users/yangzc/anaconda3/envs/py310/bin/python3",
+    "idf.pythonInstallPath": "/Users/yangzc/anaconda3/envs/py310/bin/python3.10",
     "idf.openOcdConfigs": [
         "interface/ftdi/esp32_devkitj_v1.cfg",
         "target/esp32s3.cfg"
@@ -15,9 +15,30 @@
         "string.h": "c",
         "semphr.h": "c",
         "complex": "c",
-        "esp_wifi.h": "c"
+        "esp_wifi.h": "c",
+        "esp_event.h": "c",
+        "esp_sntp.h": "c",
+        "gpio.h": "c",
+        "stdio.h": "c",
+        "audio_thread.h": "c",
+        "audio_pipeline.h": "c",
+        "esp_log.h": "c",
+        "i2s_stream.h": "c",
+        "sdmmc_common.h": "c",
+        "audio_element.h": "c",
+        "freertos.h": "c",
+        "sdmmc_cmd.h": "c",
+        "event_groups.h": "c",
+        "sdkconfig.h": "c",
+        "esp_mac.h": "c",
+        "board.h": "c",
+        "soc.h": "c",
+        "esp_assert.h": "c",
+        "esp_vfs_fat.h": "c",
+        "clk_tree_defs.h": "c"
     },
     "idf.customExtraVars": {
         "IDF_TARGET": "esp32s3"
-    }
+    },
+    "idf.flashType": "UART"
 }
