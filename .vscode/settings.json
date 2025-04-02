@@ -38,7 +38,9 @@
         "clk_tree_defs.h": "c",
         "wav_head.h": "c",
         "format_wav.h": "c",
-        "stat.h": "c"
+        "stat.h": "c",
+        "*.tcc": "cpp",
+        "random": "cpp"
     },
     "idf.customExtraVars": {
         "IDF_TARGET": "esp32s3"
