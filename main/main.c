@@ -1,5 +1,6 @@
 #include <string.h>
 #include <esp_timer.h>
+#include <sys/stat.h>
 #include "nvs_flash.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
@@ -178,7 +179,7 @@ void setup_sdcard(void) {
 }
 
 static audio_pipeline_handle_t recorder;
-// static audio_element_handle_t audio_reader;
+static audio_element_handle_t audio_reader;
 #define I2S_NUM         (I2S_NUM_0)
 #define CONFIG_PCM_SAMPLE_RATE (8000)
 #define CONFIG_PCM_DATA_LEN     320
@@ -214,15 +215,16 @@ void setup_audio(void) {
     raw_stream_cfg_t raw_stream_cfg = RAW_STREAM_CFG_DEFAULT();
     raw_stream_cfg.type = AUDIO_STREAM_WRITER;
     audio_element_handle_t raw_stream = raw_stream_init(&raw_stream_cfg);
-    audio_element_set_uri(raw_stream, SD_MOUNT_POINT"/record.wav");
+    // audio_element_set_uri(raw_stream, SD_MOUNT_POINT"/record.wav");
     // 修改输出流的信息
-    audio_element_info_t out_stream_info;
-    audio_element_getinfo(raw_stream, &out_stream_info);
-    out_stream_info.sample_rates = CONFIG_PCM_SAMPLE_RATE;
-    out_stream_info.channels = 1;
-    out_stream_info.bits = AUDIO_I2S_BITS;
-    audio_element_setinfo(raw_stream, &out_stream_info);
+    // audio_element_info_t out_stream_info;
+    // audio_element_getinfo(raw_stream, &out_stream_info);
+    // out_stream_info.sample_rates = CONFIG_PCM_SAMPLE_RATE;
+    // out_stream_info.channels = 1;
+    // out_stream_info.bits = AUDIO_I2S_BITS;
+    // audio_element_setinfo(raw_stream, &out_stream_info);
     audio_pipeline_register(recorder, raw_stream, "file");
+    audio_reader = raw_stream;
     // 设置超时
     audio_element_set_output_timeout(audio_reader, portMAX_DELAY);
 
@@ -231,10 +233,33 @@ void setup_audio(void) {
     // start the pipeline
     audio_pipeline_run(recorder);
 
-    while(true) {
-        // vTaskDelay(1000 / portTICK_PERIOD_MS);
-        raw_stream_read(audio_reader, NULL, 1024);
+    int ret = 0;
+    uint8_t *audio_pcm_buf = heap_caps_malloc(CONFIG_PCM_DATA_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    if (!audio_pcm_buf) {
+        printf("Failed to alloc audio buffer!\n");
+        goto THREAD_END;
     }
+    FILE *f = fopen(SD_MOUNT_POINT"/record.wav", "a");
+    // 判断文件是否存在
+    struct stat st;
+    if (stat(SD_MOUNT_POINT"/record.wav", &st) == 0) {
+        // Delete it if it exists
+        unlink(SD_MOUNT_POINT"/record.wav");
+    }
+
+    // 保存10s的音频数据
+    uint32_t save_bytes = BYTE_RATE * 10;
+    size_t bytes_read = 0;
+    while(bytes_read < save_bytes) {
+        ret = raw_stream_read(raw_stream, (char *)audio_pcm_buf, CONFIG_PCM_DATA_LEN);
+        if (ret != CONFIG_PCM_DATA_LEN) {
+            printf("read raw stream error, expect %d, but only %d\n", CONFIG_PCM_DATA_LEN, ret);
+        }
+        // write to file
+        fwrite(audio_pcm_buf, ret, 1, f);
+        bytes_read += ret;
+    }
+    fclose(f);
 
 
     // uint8_t *audio_pcm_buf = heap_caps_malloc(CONFIG_PCM_DATA_LEN, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -262,10 +287,10 @@ void setup_audio(void) {
     // }
     // fclose(f);
 
-// THREAD_END:
-//     if(audio_pcm_buf) {
-//         free(audio_pcm_buf);
-//     }
+THREAD_END:
+    if(audio_pcm_buf) {
+        free(audio_pcm_buf);
+    }
 }
 
 int app_main(void) {
